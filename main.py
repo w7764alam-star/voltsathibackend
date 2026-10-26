@@ -1,8 +1,9 @@
-import os, re
+import os, re, time, collections
 from datetime import datetime, timedelta, timezone
-import bcrypt, jwt
-from fastapi import FastAPI, Depends, HTTPException
+import bcrypt, jwt, httpx
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
@@ -14,6 +15,19 @@ if DB.startswith("postgres://"): DB = DB.replace("postgres://", "postgresql+psyc
 elif DB.startswith("postgresql://"): DB = DB.replace("postgresql://", "postgresql+psycopg2://", 1)
 SECRET = os.getenv("SECRET_KEY", "dev-only-change-me")
 STATUSES = ["Submitted", "Assigned", "In progress", "Resolved"]
+# --- Live AI (any OpenAI-compatible service; default Groq, free) ---
+AI_KEY = os.getenv("GROQ_API_KEY") or os.getenv("AI_API_KEY", "")
+AI_BASE_URL = os.getenv("AI_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
+AI_MODEL = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
+AI_SYSTEM = (
+    "You are VoltAI, the assistant inside VoltSathi, an electrical fault reporting and safety app used mostly in India. "
+    "Answer in the same language the user writes in (English, Hindi, or Hinglish). Keep answers short, simple and practical. "
+    "You can explain electrical concepts, appliances, bills, earthing, MCB/fuse, inverters, solar and basic electronics, and also help with general questions. "
+    "Safety first: never give step-by-step instructions for repairing live wiring, bypassing MCB/earthing/meters, or working on high voltage. "
+    "For sparking, burning smell, exposed wires or shock, tell the person to stay away, switch off the main supply only if it is safe, and call a qualified electrician or the electricity helpline 1912, or 112 in an emergency. "
+    "If you are not sure, say so."
+)
+ai_hits = collections.defaultdict(list)
 engine = create_engine(DB, pool_pre_ping=True,
                        connect_args={"check_same_thread": False} if DB.startswith("sqlite") else {})
 SessionLocal = sessionmaker(engine, expire_on_commit=False)
@@ -99,6 +113,12 @@ class StatusIn(BaseModel):
 class RoleIn(BaseModel):
     email: str
     role: str = Field(pattern="^(USER|TECHNICIAN|ADMIN)$")
+class AIMsg(BaseModel):
+    role: str
+    content: str = Field(max_length=2000)
+class AIChatIn(BaseModel):
+    message: str = Field(min_length=1, max_length=500)
+    history: list[AIMsg] = []
 
 def user_out(u): return {"id": u.id, "name": u.name, "email": u.email, "role": u.role}
 def token_for(u): return jwt.encode({"sub": str(u.id), "exp": datetime.now(timezone.utc) + timedelta(days=7)}, SECRET, algorithm="HS256")
@@ -109,7 +129,30 @@ def rep_out(r, name=None):
     return d
 
 @app.get("/api/health")
-def health(): return {"status": "ok"}
+def health(): return {"status": "ok", "features": ["auth"] + (["ai"] if AI_KEY else [])}
+
+@app.post("/api/ai/chat")
+async def ai_chat(b: AIChatIn, request: Request):
+    if not AI_KEY: raise HTTPException(503, "AI is not configured on the server")
+    ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "x")).split(",")[0].strip()
+    t = time.time(); ai_hits[ip] = [x for x in ai_hits[ip] if t - x < 60]
+    if len(ai_hits[ip]) >= 15: raise HTTPException(429, "Too many questions. Please wait a minute.")
+    ai_hits[ip].append(t)
+    msgs = [{"role": "system", "content": AI_SYSTEM}]
+    for m in b.history[-8:]:
+        msgs.append({"role": "assistant" if m.role == "assistant" else "user", "content": m.content})
+    msgs.append({"role": "user", "content": b.message})
+    try:
+        async with httpx.AsyncClient(timeout=30) as c:
+            r = await c.post(AI_BASE_URL + "/chat/completions", headers={"Authorization": "Bearer " + AI_KEY},
+                             json={"model": AI_MODEL, "messages": msgs, "max_tokens": 1000, "temperature": 0.5})
+    except httpx.HTTPError:
+        raise HTTPException(502, "AI service not reachable")
+    if r.status_code != 200: raise HTTPException(503, "AI is busy right now. Try again shortly.")
+    try: text = (r.json()["choices"][0]["message"]["content"] or "").strip()
+    except (KeyError, IndexError, ValueError): text = ""
+    if not text: raise HTTPException(502, "AI gave no answer")
+    return {"reply": text}
 
 @app.post("/api/auth/register")
 def register(b: AuthIn, db: Session = Depends(get_db)):
@@ -151,5 +194,9 @@ def set_role(b: RoleIn, _: User = Depends(admin), db: Session = Depends(get_db))
     if not u: raise HTTPException(404, "User not found")
     u.role = b.role; db.commit(); return user_out(u)
 
+# Website: use static/ folder if present; otherwise serve index.html from the repo root.
 if os.path.isdir("static"):
     app.mount("/", StaticFiles(directory="static", html=True), name="web")
+elif os.path.isfile("index.html"):
+    @app.get("/")
+    def home(): return FileResponse("index.html")

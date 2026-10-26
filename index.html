@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e766e">
+<meta name="description" content="VoltSathi electrical fault reporting prototype with local records, safety guidance and electrical learning assistant.">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<title>VoltSathi | Electrical Service Desk</title>
+<style>
+:root{--brand:#176b61;--brand2:#2c8d80;--ink:#202d32;--muted:#68777b;--bg:#f5f7f6;--card:#fff;--line:#e2e8e5;--danger:#c63c46;--soft:#e9f3ef}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}button,input,textarea,select{font:inherit}button{cursor:pointer}
+.app{max-width:520px;min-height:100dvh;margin:0 auto;background:var(--bg);position:relative;padding-bottom:88px;box-shadow:0 0 35px #153b4510}
+header{background:var(--brand);color:white;padding:20px 18px 22px;border-radius:0 0 24px 24px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;letter-spacing:-.5px}.logo{height:38px;width:38px;border-radius:12px;background:#ffffff22;display:grid;place-items:center;font-size:22px}.pill{font-size:11px;background:#ffffff20;padding:7px 10px;border-radius:20px}
+.greeting{margin-top:22px;font-size:13px;color:#d9f3f0}.hero-title{font-size:27px;line-height:1.15;letter-spacing:-.8px;font-weight:800;margin:6px 0 8px}.hero-sub{font-size:13px;line-height:1.5;color:#d9f3f0;max-width:340px}
+main{padding:18px}.page{display:none}.page.active{display:block}.section-head{display:flex;justify-content:space-between;align-items:center;margin:5px 0 12px}.section-head h2{font-size:17px;margin:0;letter-spacing:-.3px}.muted{color:var(--muted);font-size:12px;line-height:1.5}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;box-shadow:0 3px 12px #17383d05}.action{min-height:118px;text-align:left;border:1px solid var(--line);background:white;border-radius:17px;padding:15px;color:var(--ink)}.action:active,.nav-btn:active{transform:scale(.98)}.action-icon{width:40px;height:40px;border-radius:13px;background:var(--soft);display:grid;place-items:center;font-size:21px;margin-bottom:13px}.action strong{display:block;font-size:14px}.action span{display:block;font-size:11px;color:var(--muted);margin-top:5px;line-height:1.4}
+.status-card{display:flex;align-items:center;gap:13px;margin:16px 0}.status-icon{width:44px;height:44px;border-radius:14px;background:#fff3d9;display:grid;place-items:center;font-size:22px}.status-card strong{font-size:14px}.status-card p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.btn{border:0;border-radius:12px;background:var(--brand);color:white;padding:12px 15px;font-weight:700;font-size:13px}.btn.full{width:100%;margin-top:10px}.btn.secondary{background:var(--soft);color:var(--brand)}.btn.outline{background:white;border:1px solid var(--line);color:var(--ink)}.field{margin:12px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:white;border-radius:12px;padding:12px;color:var(--ink);outline:none}.field textarea{min-height:92px;resize:vertical}.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--brand2);box-shadow:0 0 0 3px #13a89e18}
+.tag{display:inline-block;font-size:10px;font-weight:800;padding:5px 8px;border-radius:20px;background:#fff3d9;color:#906017}.empty{text-align:center;padding:28px 14px}.empty .big{font-size:34px}.empty h3{font-size:15px;margin:10px 0 5px}.empty p{font-size:12px;color:var(--muted);line-height:1.5}
+.report-item{margin-bottom:10px}.report-top{display:flex;justify-content:space-between;gap:10px}.report-item h3{font-size:14px;margin:0 0 6px}.report-item p{font-size:11px;color:var(--muted);margin:0;line-height:1.5}.report-status{font-size:10px;background:#fff3d9;color:#8c6018;border-radius:20px;padding:5px 8px;height:max-content;white-space:nowrap}
+.ai-head{display:flex;align-items:center;gap:12px;margin:4px 0 15px}.ai-avatar{width:48px;height:48px;border-radius:16px;background:var(--soft);display:grid;place-items:center;font-size:25px}.ai-head h2{margin:0;font-size:18px}.ai-head p{margin:4px 0 0;color:var(--muted);font-size:12px}.chat{background:white;border:1px solid var(--line);border-radius:17px;overflow:hidden}.chat-log{padding:14px;height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}.bubble{max-width:88%;font-size:13px;line-height:1.5;padding:10px 12px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere}.bubble.bot{align-self:flex-start;background:#f0f6f6;border-bottom-left-radius:4px}.bubble.user{align-self:flex-end;background:var(--brand);color:white;border-bottom-right-radius:4px}.chat-compose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}.chat-compose input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:11px;font-size:13px;outline:none}.chat-compose button{width:44px;border:0;border-radius:12px;background:var(--brand);color:white;font-size:18px}.suggestions{display:flex;gap:7px;overflow:auto;padding:11px 12px;border-top:1px solid var(--line)}.suggestions button{flex:0 0 auto;border:1px solid var(--line);border-radius:20px;padding:8px 10px;background:white;color:var(--brand);font-size:11px}
+.safety-row{display:flex;gap:12px;align-items:flex-start;margin:12px 0}.safety-row .symbol{font-size:21px}.safety-row strong{font-size:13px}.safety-row p{font-size:12px;color:var(--muted);line-height:1.5;margin:4px 0}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:grid;grid-template-columns:repeat(6,1fr);background:#fffffff2;backdrop-filter:blur(15px);border-top:1px solid var(--line);padding:8px 5px max(8px,env(safe-area-inset-bottom));z-index:10}.nav-btn{border:0;background:transparent;color:#829198;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;font-size:10px}.nav-btn .ico{font-size:19px}.nav-btn.active{color:var(--brand);font-weight:800}.notice{font-size:11px;color:var(--muted);line-height:1.5;margin-top:12px}.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:#173a40;color:white;border-radius:12px;padding:11px 14px;font-size:12px;display:none;z-index:20;max-width:90%}
+.section-head .btn{padding:9px 11px}.card{box-shadow:0 2px 8px #1b393208}.action{transition:transform .12s ease,border-color .12s ease}.action:hover{border-color:#bdd8d0}.report-item{border-left:3px solid #d6e8e2}.report-status{background:#edf5f0;color:#316b51}.bubble.bot{border:1px solid #e6ece9}.nav-btn.active .ico{background:#e4f1eb;border-radius:10px;padding:2px 9px}@media(min-width:600px){body{padding:20px 0}.app{border-radius:28px;overflow:hidden;min-height:calc(100dvh - 40px)}nav{bottom:20px;border-radius:0 0 28px 28px}.toast{bottom:110px}}
+
+/* VoltSathi upgrade pack */
+:root{--shadow:0 8px 24px #153b4510}
+body.dark{--ink:#e7efed;--muted:#a5b6b2;--bg:#101918;--card:#182321;--line:#2c3c38;--soft:#203b35}
+body.dark header{background:#124e47}
+body.dark .action,body.dark .field input,body.dark .field textarea,body.dark .field select,body.dark .chat,body.dark .chat-compose input,body.dark .suggestions button{background:#182321;color:var(--ink);border-color:var(--line)}
+body.dark nav{background:#14201ef2}body.dark .btn.outline{background:#182321;color:var(--ink)}
+.tools-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.tools-row .btn{flex:1;min-width:110px}
+.filter-input{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);margin:0 0 12px}
+.priority{display:inline-block;font-size:10px;font-weight:800;padding:5px 8px;border-radius:20px;margin-top:7px;background:#e9f3ff;color:#275d8c}
+.priority.high{background:#ffebe7;color:#a93226}.priority.medium{background:#fff3d9;color:#906017}
+.report-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.report-actions button{font-size:11px;padding:8px 10px}
+.mini-stat{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.mini-stat:last-child{border-bottom:0}
+.settings-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.switch{accent-color:var(--brand);width:20px;height:20px}
+.inline-note{border-radius:12px;background:var(--soft);padding:12px;font-size:12px;line-height:1.5;color:var(--brand);margin:12px 0}
+@media(min-width:600px){.app{box-shadow:var(--shadow)}}
+
+
+.sos{background:#c63c46;color:#fff;border:0;border-radius:12px;padding:8px 12px;font-weight:800;font-size:12px;text-decoration:none}
+.call{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px}.call:last-child{border:0}.call b{color:var(--brand);font-size:15px}
+.steps{margin:8px 0 0;padding-left:20px;font-size:12px;line-height:1.7}.steps li{margin-bottom:4px}
+.warn{background:#ffebe7;color:#a93226;border-radius:12px;padding:12px;font-size:12px;line-height:1.5;margin:10px 0}
+body.dark .warn{background:#3a1d1d;color:#ffb4a8}
+.row2{display:grid;grid-template-columns:1fr 1fr 70px;gap:6px;margin-bottom:6px}.row2 input,.row2 select{border:1px solid var(--line);border-radius:10px;padding:9px;background:var(--card);color:var(--ink);min-width:0}
+.res{font-size:22px;font-weight:800;color:var(--brand)}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;line-height:1.45}.chk input{width:20px;height:20px;accent-color:var(--brand);flex:none}.lang{background:#ffffff25;color:#fff;border:0;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:700;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="app">
+<header id="homeHeader">
+  <div class="top"><div class="brand"><div class="logo">⚡</div>VoltSathi</div><span><button class="lang" onclick="toggleLang()" id="langBtn">हिंदी</button><a class="sos" href="tel:112">🚨 SOS 112</a></span></div>
+  <div class="greeting">ELECTRICAL SERVICE DESK</div>
+  <div class="hero-title">Electrical help,<br>made simple.</div>
+  <div class="hero-sub">Record a fault, review saved requests, and get practical safety guidance.</div>
+</header>
+<main>
+<section class="page active" id="home">
+  <div class="section-head"><h2>Quick actions</h2><span class="muted">Choose a service</span></div>
+  <div class="grid">
+    <button class="action" onclick="showPage('report')"><div class="action-icon">🧰</div><strong>Report a fault</strong><span>Tell us what needs attention</span></button>
+    <button class="action" onclick="showPage('reports')"><div class="action-icon">📋</div><strong>My reports</strong><span>View saved fault reports</span></button>
+    <button class="action" onclick="showPage('ai')"><div class="action-icon">✨</div><strong>Ask VoltAI</strong><span>Get help with electrical questions</span></button>
+    <button class="action" onclick="showPage('safety')"><div class="action-icon">🛡️</div><strong>Safety guide</strong><span>Learn what to do safely</span></button>
+    <button class="action" onclick="showPage('help')"><div class="action-icon">📞</div><strong>Emergency &amp; first aid</strong><span>Helplines and shock response</span></button>
+    <button class="action" onclick="showPage('tools')"><div class="action-icon">🧮</div><strong>Bill calculator</strong><span>Estimate units, cost and savings</span></button>
+    <button class="action" onclick="showPage('check')"><div class="action-icon">✅</div><strong>Safety checklist</strong><span>Monthly home electrical check</span></button>
+    <button class="action" onclick="installApp()"><div class="action-icon">📲</div><strong>Install app</strong><span>Use offline, like a real app</span></button>
+  </div>
+  <div class="card status-card"><div class="status-icon">💡</div><div><strong>Stay safe around electricity</strong><p>Never touch exposed wires or damaged electrical equipment.</p></div></div>
+  <div class="section-head"><h2>Overview</h2><span class="muted">This device</span></div>
+  <div class="grid" style="margin-bottom:12px">
+    <div class="card"><div class="muted">Reports saved</div><div id="homeCount" style="font-size:25px;font-weight:800;margin-top:6px">0</div></div>
+    <div class="card"><div class="muted">Latest report</div><div id="homeLatest" style="font-size:14px;font-weight:800;margin-top:9px">None yet</div></div>
+  </div>
+  <div class="section-head"><h2>Recent activity</h2><button class="btn secondary" onclick="showPage('reports')">View all</button></div>
+  <div id="homeRecent" class="card"><p class="muted" style="margin:0">Your saved reports will appear here.</p></div>
+  <div class="card" style="margin-top:12px">
+    <div class="section-head"><h2>App tools</h2><span class="muted">Personalise</span></div>
+    <div class="settings-toggle"><div><strong style="font-size:13px">Dark appearance</strong><p class="muted" style="margin:4px 0 0">Easier viewing at night</p></div><input class="switch" type="checkbox" id="darkToggle" aria-label="Toggle dark appearance"></div>
+    <div class="tools-row"><button class="btn secondary" onclick="exportReports()">Export reports</button><button class="btn outline" onclick="showPage('settings')">App settings</button></div>
+  </div>
+  <p class="notice">Prototype note: reports are saved only in this browser. They are not sent to a utility or technician.</p>
+</section>
+
+<section class="page" id="report">
+  <div class="section-head"><h2>Report an electrical fault</h2><button class="btn outline" onclick="showPage('home')">← Back</button></div>
+  <div class="card">
+    <p class="muted" style="margin-top:0">Enter the details below. A reference number will be created and saved in this browser.</p>
+    <form id="reportForm">
+      <div class="field"><label for="issue">Issue type</label><select id="issue" required><option value="">Choose an issue</option><option>Power outage</option><option>Exposed or damaged wire</option><option>Sparking or burning smell</option><option>Switch / socket problem</option><option>Streetlight fault</option><option>Other electrical issue</option></select></div>
+      <div class="field"><label for="priority">Priority</label><select id="priority"><option value="Normal">Normal — no immediate danger</option><option value="Medium">Medium — service needed soon</option><option value="High">High — possible immediate hazard</option></select></div>
+      <div class="field"><label for="location">Location / landmark</label><input id="location" placeholder="e.g. near college main gate" required maxlength="140"></div>
+      <div class="field"><button type="button" class="btn secondary full" onclick="getGPS()" id="gpsBtn">📍 Use my current location</button><input type="hidden" id="gps"></div>
+      <div class="field"><label for="details">Describe the issue</label><textarea id="details" placeholder="What happened? Add useful details without touching the equipment." required maxlength="1000"></textarea></div>
+      <div class="field"><label for="contact">Contact (optional)</label><input id="contact" placeholder="Phone or email" maxlength="100"></div>
+      <button class="btn full" type="submit">Submit report</button>
+    </form>
+    <p class="notice">If there is immediate danger, keep away and contact local emergency services or the responsible electricity utility. This app does not dispatch technicians.</p>
+  </div>
+</section>
+
+<section class="page" id="reports">
+  <div class="section-head"><h2>My reports</h2><button class="btn outline" onclick="showPage('home')">← Back</button></div>
+  <input class="filter-input" id="reportSearch" placeholder="Search by issue, location or reference…" oninput="renderReports()" aria-label="Search reports">
+  <div class="tools-row"><button class="btn secondary" onclick="exportReports()">Export JSON</button><button class="btn outline" onclick="exportCSV()">Export CSV</button></div>
+  <div id="reportList"></div>
+  <p class="notice">Reports are stored locally in your browser. They will not automatically reach an electricity department or technician.</p>
+</section>
+
+<section class="page" id="ai">
+  <div class="section-head"><h2>VoltAI assistant</h2><button class="btn outline" onclick="showPage('home')">← Back</button></div>
+  <div class="ai-head"><div class="ai-avatar">✨</div><div><h2>Ask VoltAI</h2><p>Electrical help in simple language</p></div></div>
+  <div class="chat">
+    <div class="chat-log" id="chatLog"><div class="bubble bot">Hi! I'm VoltAI. You can ask me about electrical safety, basic concepts, or how to use VoltSathi. What would you like help with?</div></div>
+    <div class="suggestions"><button onclick="suggest('How do I report a fault?')">Report a fault</button><button onclick="suggest('What should I do about an exposed wire?')">Exposed wire</button><button onclick="suggest('Explain earthing simply')">Explain earthing</button></div>
+    <form class="chat-compose" id="chatForm"><input id="chatInput" placeholder="Ask an electrical question..." autocomplete="off" maxlength="500" required><button aria-label="Send message" type="submit">➤</button></form>
+  </div>
+  <p class="notice" id="aiNote">Demo mode: this assistant uses built-in responses, not a live AI model. For ChatGPT-like answers, a secure backend and AI API connection must be configured. Do not put private API keys in this HTML file.</p>
+</section>
+
+
+
+<section class="page" id="help">
+  <div class="section-head"><h2>Emergency &amp; first aid</h2><button class="btn outline" onclick="showPage('home')">← Back</button></div>
+  <div class="card"><strong style="font-size:14px">Helplines (India)</strong>
+    <a class="call" href="tel:112"><span>Emergency (police / fire / ambulance)</span><b>112</b></a>
+    <a class="call" href="tel:101"><span>Fire brigade</span><b>101</b></a>
+    <a class="call" href="tel:102"><span>Ambulance</span><b>102</b></a>
+    <a class="call" href="tel:1912"><span>Electricity complaint (most states)</span><b>1912</b></a>
+    <p class="muted" style="margin:8px 0 0">Electricity complaint numbers differ by state and company. Check your latest bill for your local number.</p></div>
+  <div class="card" style="margin-top:12px"><strong style="font-size:14px">If someone gets an electric shock</strong>
+    <div class="warn">Do NOT touch the person while they may still be in contact with the current.</div>
+    <ol class="steps"><li>Switch off the main switch / MCB if you can reach it safely.</li><li>If you cannot, push the person away using something dry and non-conductive (dry wooden stick, dry rope). Stand on dry ground or a rubber mat.</li><li>Call 112 or 102 immediately.</li><li>If the person is not breathing, start CPR if you are trained, and continue until help arrives.</li><li>Cover burns loosely with a clean dry cloth. Do not apply ointment or ice.</li><li>Every shock victim should be seen by a doctor, even if they feel fine.</li></ol></div>
+  <div class="card" style="margin-top:12px"><strong style="font-size:14px">Electrical fire</strong>
+    <ol class="steps"><li>Switch off power at the main if safe.</li><li>Never use water. Use a CO₂ or dry powder extinguisher.</li><li>Leave the building and call 101.</li></ol></div>
+</section>
+
+<section class="page" id="tools">
+  <div class="section-head"><h2>Calculators</h2><button class="btn outline" onclick="showPage('home')">← Back</button></div>
+  <div class="card">
+    <p class="muted" style="margin-top:0">Add your appliances: watts, hours per day, and quantity.</p>
+    <div id="appRows"></div>
+    <button class="btn secondary" onclick="addRow()">+ Add appliance</button>
+    <div class="field"><label for="rate">Rate per unit (₹)</label><input id="rate" type="number" step="0.1" value="7" min="0" oninput="calc()"></div>
+    <div class="mini-stat"><span>Units / month</span><span class="res" id="rUnits">0</span></div>
+    <div class="mini-stat"><span>Estimated bill</span><span class="res" id="rCost">₹0</span></div>
+    <div class="inline-note" id="rTip">Add an appliance to see tips.</div>
+    <p class="notice">Estimate only. Your actual bill may include fixed charges, slabs and taxes.</p>
+  </div>
+    <div class="card" style="margin-top:12px"><strong style="font-size:14px">Load &amp; MCB helper</strong>
+      <div class="field"><label for="lw">Total load on one circuit (watts)</label><input id="lw" type="number" min="0" placeholder="e.g. 2000" oninput="loadCalc()"></div>
+      <div class="mini-stat"><span>Current (at 230 V)</span><span class="res" id="lA">0 A</span></div>
+      <div class="inline-note" id="lTip">Enter a load to get a general guide.</div></div>
+    <div class="card" style="margin-top:12px"><strong style="font-size:14px">Solar savings estimate</strong>
+      <div class="field"><label for="skw">Solar system size (kW)</label><input id="skw" type="number" min="0" step="0.5" value="3" oninput="solCalc()"></div>
+      <div class="mini-stat"><span>Units / month (approx.)</span><span class="res" id="sU">0</span></div>
+      <div class="mini-stat"><span>Saving / month</span><span class="res" id="sC">₹0</span></div>
+      <p class="notice">Assumes about 4 units per kW per day at the rate above. Real output depends on location, shade and panels.</p></div>
+</section>
+
+
+
+
+<section class="page" id="check">
+  <div class="section-head"><h2>Safety checklist</h2><button class="btn outline" onclick="showPage('home')">← Back</button></div>
+  <div class="card"><div class="inline-note" id="chkInfo" style="margin-top:0">Do this check once a month.</div><label class="chk"><input type="checkbox" class="ck"><span>Press the TEST button on RCD/ELCB (if fitted). It should trip the power.</span></label><label class="chk"><input type="checkbox" class="ck"><span>Check plugs, sockets and switches for heat, black marks or looseness.</span></label><label class="chk"><input type="checkbox" class="ck"><span>Look for frayed, cracked or taped extension cords. Replace them.</span></label><label class="chk"><input type="checkbox" class="ck"><span>Make sure no wires run under carpets or through wet areas.</span></label><label class="chk"><input type="checkbox" class="ck"><span>Confirm bathroom and kitchen sockets are away from water.</span></label><label class="chk"><input type="checkbox" class="ck"><span>Check that heavy appliances (AC, geyser) have their own proper MCB.</span></label><label class="chk"><input type="checkbox" class="ck"><span>Keep a torch and the electricity helpline number ready.</span></label><label class="chk"><input type="checkbox" class="ck"><span>Unplug chargers and devices that are not in use.</span></label>
+  <button class="btn full" onclick="chkDone()">Mark checked today</button><p class="notice">If any item fails, stop using that point and call a qualified electrician.</p></div>
+</section>
+<section class="page" id="admin">
+  <div class="section-head"><h2>Admin / technician</h2><button class="btn outline" onclick="showPage('settings')">← Back</button></div>
+  <div id="adminList"></div>
+</section>
+
+<section class="page" id="settings">
+  <div class="section-head"><h2>App settings</h2><button class="btn outline" onclick="showPage('home')">← Back</button></div>
+  <div class="card">
+    <div class="mini-stat"><div><strong style="font-size:13px">Storage</strong><div class="muted">This browser / device only</div></div><span class="tag">Local</span></div>
+    <div class="mini-stat"><div><strong style="font-size:13px">Saved reports</strong><div class="muted">Records currently stored</div></div><strong id="settingsCount">0</strong></div>
+    <div class="inline-note">For a production launch, connect a secure backend for accounts, cloud sync, technician assignment, notifications and verified status updates. This standalone file does not provide those services.</div>
+    <button class="btn outline full" onclick="clearAllReports()">Delete all local reports</button>
+  </div>
+  <div class="card" style="margin-top:12px"><strong style="font-size:14px">Account (cloud sync)</strong>
+    <p class="muted" id="acctMsg" style="margin:6px 0 0">Checking server…</p>
+    <div id="acctForm" style="display:none"><div class="field"><input id="aName" placeholder="Name (for register)" maxlength="80"></div><div class="field"><input id="aEmail" type="email" placeholder="Email"></div><div class="field"><input id="aPass" type="password" placeholder="Password (min 8 characters)" maxlength="72"></div><div class="tools-row"><button class="btn" onclick="doAuth('login')">Login</button><button class="btn secondary" onclick="doAuth('register')">Register</button></div>
+<div id="gWrap" style="display:none;margin-top:12px;text-align:center"><div class="muted" style="margin-bottom:6px">or</div><div id="gBtn" style="display:inline-block"></div></div>
+<p style="margin:12px 0 0;font-size:12px"><a href="#" onclick="forgotToggle(true);return false" style="color:var(--brand);font-weight:700">Forgot password?</a></p>
+<div id="forgotBox" style="display:none;margin-top:10px">
+<div class="field"><input id="fEmail" type="email" placeholder="Your registered email"></div>
+<div class="tools-row"><button class="btn secondary" onclick="forgotSend()">Send reset code</button><button class="btn outline" onclick="forgotToggle(false)">Cancel</button></div>
+<div id="forgotStep2" style="display:none;margin-top:8px"><div class="field"><input id="fCode" inputmode="numeric" placeholder="Code from email" maxlength="12" autocomplete="one-time-code"></div><div class="field"><input id="fPass" type="password" placeholder="New password (min 8 characters)" maxlength="72"></div><button class="btn full" onclick="forgotReset()">Set new password</button></div>
+</div></div>
+    <div id="acctIn" style="display:none"><p id="acctWho" style="font-size:13px;font-weight:700"></p><div class="tools-row"><button class="btn secondary" id="adminBtn" style="display:none" onclick="showPage('admin')">Admin panel</button><button class="btn outline" onclick="logout()">Logout</button></div></div></div>
+  <div class="card" style="margin-top:12px">
+    <h3 style="font-size:14px;margin-top:0">Emergency reminder</h3>
+    <p class="muted">If there is smoke, fire, sparking, or an exposed live wire, move away and keep others away. Contact the electricity utility or emergency services. Do not use this app as an emergency dispatch service.</p>
+  </div>
+</section>
+
+<section class="page" id="safety">
+  <div class="section-head"><h2>Electrical safety</h2><button class="btn outline" onclick="showPage('home')">← Back</button></div>
+  <div class="card">
+    <div class="safety-row"><div class="symbol">⚠️</div><div><strong>Exposed wires or sparking</strong><p>Keep everyone away. Do not touch, move, or try to repair the wire. Contact the electricity utility or a qualified electrician.</p></div></div>
+    <div class="safety-row"><div class="symbol">💧</div><div><strong>Water near electricity</strong><p>Do not step into standing water near electrical equipment or touch switches with wet hands. Keep away and seek professional help.</p></div></div>
+    <div class="safety-row"><div class="symbol">🔥</div><div><strong>Burning smell or smoke</strong><p>Move away from the equipment. If safe to do so without approaching danger, alert others and get help. Never pour water on electrical equipment.</p></div></div>
+    <div class="safety-row"><div class="symbol">🔌</div><div><strong>Damaged plug or socket</strong><p>Stop using it and ask a qualified electrician to inspect it. Do not open the socket yourself.</p></div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><strong style="font-size:14px">Important</strong><p class="muted">VoltSathi provides general information only. It cannot assess an emergency remotely or replace a trained electrician.</p></div>
+</section>
+</main>
+<nav aria-label="Main navigation">
+  <button class="nav-btn active" data-page="home" onclick="showPage('home')"><span class="ico">⌂</span>Home</button>
+  <button class="nav-btn" data-page="report" onclick="showPage('report')"><span class="ico">＋</span>Report</button>
+  <button class="nav-btn" data-page="reports" onclick="showPage('reports')"><span class="ico">▤</span>My reports</button>
+  <button class="nav-btn" data-page="ai" onclick="showPage('ai')"><span class="ico">✧</span>VoltAI</button>
+  <button class="nav-btn" data-page="safety" onclick="showPage('safety')"><span class="ico">♡</span>Safety</button>
+  <button class="nav-btn" data-page="settings" onclick="showPage('settings')"><span class="ico">⚙</span>Settings</button>
+</nav>
+<div class="toast" id="toast" role="status"></div>
+</div>
+<script>
+const pages=['home','report','reports','ai','safety','settings','help','tools','check','admin'];
+function showPage(name){
+  pages.forEach(p=>document.getElementById(p).classList.toggle('active',p===name));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===name));
+  document.getElementById('homeHeader').style.display=name==='home'?'block':'none';
+  if(name==='reports')renderReports();
+  if(name==='settings')updateSettings();
+  if(name==='home')updateDashboard();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.style.display='none',2600)}
+function getReports(){try{return JSON.parse(localStorage.getItem('voltsathi_reports')||'[]')}catch(e){return []}}
+function saveReports(list){localStorage.setItem('voltsathi_reports',JSON.stringify(list))}
+document.getElementById('reportForm').addEventListener('submit',e=>{
+ e.preventDefault();const report={id:'VS-'+Date.now().toString().slice(-7),issue:document.getElementById('issue').value,priority:document.getElementById('priority').value,location:document.getElementById('location').value.trim(),details:document.getElementById('details').value.trim(),contact:document.getElementById('contact').value.trim(),gps:document.getElementById('gps').value,date:new Date().toLocaleString(),createdAt:new Date().toISOString(),status:'Saved locally'};
+ const all=getReports();all.unshift(report);saveReports(all);e.target.reset();document.getElementById('gps').value='';document.getElementById('gpsBtn').textContent='📍 Use my current location';toast('Report saved locally');showPage('reports');
+});
+function renderReports(){
+  const root=document.getElementById('reportList'),all=getReports();
+  updateDashboard(); updateSettings();
+  const search=(document.getElementById('reportSearch')?.value||'').toLowerCase().trim();
+  const filtered=all.filter(r=>[r.issue,r.location,r.id,r.details,r.priority].join(' ').toLowerCase().includes(search));
+  if(!all.length){root.innerHTML='<div class="card empty"><div class="big">📋</div><h3>No reports yet</h3><p>When you submit a fault report, its reference details will appear here.</p><button class="btn" onclick="showPage(\'report\')">Create a report</button></div>';return}
+  if(!filtered.length){root.innerHTML='<div class="card empty"><div class="big">🔎</div><h3>No matching reports</h3><p>Try a different issue, location or reference number.</p></div>';return}
+  root.innerHTML=filtered.map(r=>`<div class="card report-item"><div class="report-top"><div><h3>${escapeHtml(r.issue)}</h3><p>${escapeHtml(r.location)}<br>${escapeHtml(r.date)}<br>Reference: <strong>${escapeHtml(r.id)}</strong></p><span class="priority ${(r.priority||'Normal')==='High'?'high':(r.priority||'')==='Medium'?'medium':''}">${escapeHtml(r.priority||'Normal')} priority</span></div><span class="report-status">${escapeHtml(r.status||'Saved locally')}</span></div><p style="margin-top:9px">${escapeHtml(r.details)}</p>${r.contact?`<p style="margin-top:7px">Contact: ${escapeHtml(r.contact)}</p>`:''}<div class="report-actions"><button class="btn secondary" onclick="shareWA('${escapeHtml(r.id)}')">Share on WhatsApp</button><button class="btn outline" onclick="cycleStatus('${escapeHtml(r.id)}')">Update status</button><button class="btn outline" onclick="copyReference('${escapeHtml(r.id)}')">Copy reference</button><button class="btn outline" onclick="deleteReport('${escapeHtml(r.id)}')">Delete</button></div></div>`).join('');
+}
+function deleteReport(id){
+  if(!confirm('Delete report '+id+' from this device?'))return;
+  saveReports(getReports().filter(r=>r.id!==id));renderReports();toast('Report deleted from this device');
+}
+function clearAllReports(){
+  if(!getReports().length){toast('There are no saved reports');return}
+  if(!confirm('Delete every report saved in this browser? This cannot be undone.'))return;
+  saveReports([]);renderReports();updateDashboard();updateSettings();toast('Local reports cleared');
+}
+function copyReference(id){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(id).then(()=>toast('Reference copied')).catch(()=>toast('Reference: '+id));
+  } else toast('Reference: '+id);
+}
+function downloadFile(filename,content,type){
+  const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+function exportReports(){
+  const all=getReports();
+  if(!all.length){toast('No reports to export');return}
+  downloadFile('voltsathi-reports.json',JSON.stringify(all,null,2),'application/json');
+  toast('Report export prepared');
+}
+function exportCSV(){
+  const all=getReports();
+  if(!all.length){toast('No reports to export');return}
+  const cols=['id','issue','priority','location','details','contact','date','status'];
+  const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const csv=[cols.join(','),...all.map(r=>cols.map(c=>quote(r[c])).join(','))].join('\r\n');
+  downloadFile('voltsathi-reports.csv',csv,'text/csv;charset=utf-8');
+  toast('CSV export prepared');
+}
+function updateSettings(){
+  const el=document.getElementById('settingsCount');if(el)el.textContent=getReports().length;
+}
+function updateDashboard(){
+ const all=getReports();
+ const count=document.getElementById('homeCount'),latest=document.getElementById('homeLatest'),recent=document.getElementById('homeRecent');
+ if(count)count.textContent=all.length;
+ if(latest)latest.textContent=all.length?all[0].issue:'None yet';
+ if(recent){
+  if(!all.length)recent.innerHTML='<p class="muted" style="margin:0">No reports saved yet. Use Report a fault to create your first record.</p>';
+  else recent.innerHTML=all.slice(0,2).map(r=>`<div style="padding:3px 0 11px;margin-bottom:9px;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between;gap:8px"><strong style="font-size:13px">${escapeHtml(r.issue)}</strong><span class="report-status">Saved</span></div><p class="muted" style="margin:5px 0 0">${escapeHtml(r.location)} · ${escapeHtml(r.date)}</p><p class="muted" style="margin:4px 0 0">Ref: ${escapeHtml(r.id)}</p></div>`).join('');
+ }
+}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+const answers=[
+[/mcb|fuse|trip/i,'If the MCB keeps tripping, an appliance or wire may be overloaded or faulty. Switch off heavy appliances, reset once, and if it trips again call an electrician. Never bypass or tape an MCB.'],
+[/bill|unit|kwh|save|saving/i,'Units = (watts × hours) ÷ 1000. Open Bill calculator from Home to estimate your monthly bill. Tips: use LED bulbs, 5-star appliances, and switch off standby devices.'],
+[/first aid|shock|current laga|jhatka/i,'Switch off the main supply first. If you cannot, push the person away with dry wood. Call 112 or 102. Open Emergency & first aid from Home for full steps.'],
+[/helpline|emergency|number/i,'Emergency: 112, Fire: 101, Ambulance: 102, Electricity complaint: 1912 in most states. See Emergency & first aid on Home.'],
+[/report|complaint|fault/i,'To report a fault, open the Report tab, choose the issue type, add the location and a short description, then tap Submit report. In this demo, the report stays on this device and is not sent to a technician.'],
+[/exposed|wire|sparking|shock/i,'Stay well away from exposed wires, sparking equipment, and anything that may be live. Do not touch or attempt repairs. Keep others away and contact your electricity utility or a qualified electrician. If anyone is in immediate danger, contact local emergency services.'],
+[/track|status|my report/i,'Open My reports from the bottom menu. You can see the reports saved in this browser. This demo does not have a server, so it cannot provide real technician updates.'],
+[/earthing|ground/i,'Earthing connects exposed conductive parts of electrical equipment to earth through a protective conductor. It helps protective devices operate during certain faults. Never test or install earthing yourself—ask a qualified electrician.'],
+[/transformer/i,'A transformer transfers AC electrical energy between circuits using electromagnetic induction. It can increase or decrease AC voltage, depending on the turns ratio.'],
+[/ohm/i,'Ohm’s law is V = I × R. Voltage (V) equals current (I) multiplied by resistance (R). For example, if R = 5 Ω and I = 2 A, then V = 10 V.'],
+[/power|outage|electricity gone/i,'If the power is out, check whether neighbours are also affected from a safe location. Do not open a distribution board or touch wires. Report the outage to your local electricity utility.'],
+[/login|account|register|sign in/i,'This simple HTML demo does not have real accounts or secure login yet. A backend and authentication system would need to be added before using it with real users.'],
+[/hello|hi|hey/i,'Hello! Ask me about electrical safety, basic electrical concepts, or how to use VoltSathi.'],
+[/help|what can you do/i,'I can explain basic electrical concepts, give general safety guidance, and help you navigate VoltSathi. I cannot inspect wiring remotely, confirm a fault is safe, or dispatch a technician.']
+];
+function aiReply(q){
+ for(const [re,a] of answers)if(re.test(q))return a;
+ return 'I can help with general electrical concepts, basic safety guidance, and using VoltSathi. I do not have live AI connected in this demo, so I may not understand every question. For dangerous wiring, smoke, or sparking, keep away and contact a qualified electrician or the electricity utility.';
+}
+function addBubble(text,who){const log=document.getElementById('chatLog'),b=document.createElement('div');b.className='bubble '+who;b.textContent=text;log.appendChild(b);log.scrollTop=log.scrollHeight;return b}
+let aiHist=[];
+async function sendQuestion(q){q=String(q||'').trim();if(!q)return;addBubble(q,'user');document.getElementById('chatInput').value='';
+ const wait=addBubble('…','bot');let ans=null;
+ try{const r=await api('/ai/chat',{method:'POST',body:JSON.stringify({message:q,history:aiHist.slice(-8)})});ans=r&&r.reply;
+  if(ans){const n=document.getElementById('aiNote');if(n)n.textContent='Live AI is connected. It can make mistakes. For sparking, smoke or exposed wires keep away and call a qualified electrician.'}}catch(e){ans=null}
+ if(!ans)ans=aiReply(q);
+ wait.textContent=ans;aiHist.push({role:'user',content:q},{role:'assistant',content:ans});
+ const log=document.getElementById('chatLog');log.scrollTop=log.scrollHeight}
+document.getElementById('chatForm').addEventListener('submit',e=>{e.preventDefault();sendQuestion(document.getElementById('chatInput').value)});
+function suggest(q){sendQuestion(q)}
+const darkToggle=document.getElementById('darkToggle');
+function setDarkMode(on){document.body.classList.toggle('dark',on);if(darkToggle)darkToggle.checked=on;try{localStorage.setItem('voltsathi_dark',on?'1':'0')}catch(e){}}
+try{setDarkMode(localStorage.getItem('voltsathi_dark')==='1')}catch(e){setDarkMode(false)}
+if(darkToggle)darkToggle.addEventListener('change',e=>setDarkMode(e.target.checked));
+
+function getGPS(){const b=document.getElementById('gpsBtn');if(!navigator.geolocation){toast('Location not supported');return}b.textContent='Getting location…';
+ navigator.geolocation.getCurrentPosition(p=>{document.getElementById('gps').value='https://maps.google.com/?q='+p.coords.latitude.toFixed(6)+','+p.coords.longitude.toFixed(6);b.textContent='✅ Location added';},()=>{b.textContent='📍 Use my current location';toast('Location permission denied')},{enableHighAccuracy:true,timeout:10000});}
+function shareWA(id){const r=getReports().find(x=>x.id===id);if(!r)return;
+ const t=`⚡ Electrical fault report (${r.id})\nIssue: ${r.issue}\nPriority: ${r.priority}\nLocation: ${r.location}\n${r.gps?'Map: '+r.gps+'\n':''}Details: ${r.details}${r.contact?'\nContact: '+r.contact:''}`;
+ window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');}
+function addRow(n='',w='',h=''){const d=document.createElement('div');d.className='row2';d.innerHTML='<input placeholder="Watts" type="number" min="0" value="'+w+'"><input placeholder="Hours/day" type="number" min="0" max="24" step="0.5" value="'+h+'"><input placeholder="Qty" type="number" min="1" value="1">';d.querySelectorAll('input').forEach(i=>i.oninput=calc);document.getElementById('appRows').appendChild(d);}
+function calc(){let u=0,led=0;document.querySelectorAll('#appRows .row2').forEach(r=>{const[v,h,q]=[...r.querySelectorAll('input')].map(i=>parseFloat(i.value)||0);const x=v*h*q*30/1000;u+=x;if(v>=40&&v<=100&&h>=4)led+=x*0.6*0.8;});
+ const rate=parseFloat(document.getElementById('rate').value)||0;document.getElementById('rUnits').textContent=u.toFixed(1);document.getElementById('rCost').textContent='₹'+Math.round(u*rate);
+ document.getElementById('rTip').textContent=u?'Tip: switching off standby devices and using LED/5-star appliances can cut a typical bill by 10–30%.':'Add an appliance to see tips.';}
+addRow('Fan',75,8);addRow('LED bulb',9,6);calc();
+
+const HI={"Home": "होम", "Report": "रिपोर्ट", "My reports": "मेरी रिपोर्ट", "Safety": "सुरक्षा", "Settings": "सेटिंग", "Quick actions": "मुख्य काम", "Choose a service": "सेवा चुनें", "Report a fault": "खराबी दर्ज करें", "Tell us what needs attention": "समस्या बताएं", "View saved fault reports": "सहेजी रिपोर्ट देखें", "Ask VoltAI": "VoltAI से पूछें", "Get help with electrical questions": "बिजली के सवाल पूछें", "Safety guide": "सुरक्षा गाइड", "Learn what to do safely": "सुरक्षित रहना सीखें", "Emergency & first aid": "आपातकाल और प्राथमिक उपचार", "Helplines and shock response": "हेल्पलाइन और करंट लगने पर", "Bill calculator": "बिल कैलकुलेटर", "Estimate units, cost and savings": "यूनिट, खर्च और बचत", "Safety checklist": "सुरक्षा चेकलिस्ट", "Monthly home electrical check": "मासिक घर की जांच", "Install app": "ऐप इंस्टॉल करें", "Use offline, like a real app": "ऑफलाइन चलाएं", "Electrical help,": "बिजली की मदद,", "made simple.": "अब आसान।", "Stay safe around electricity": "बिजली से सुरक्षित रहें", "Never touch exposed wires or damaged electrical equipment.": "खुले तार या खराब उपकरण को कभी न छुएं।", "Reports saved": "सहेजी रिपोर्ट", "Latest report": "नवीनतम रिपोर्ट", "Overview": "सारांश", "Recent activity": "हाल की गतिविधि", "Submit report": "रिपोर्ट जमा करें", "Report an electrical fault": "बिजली की खराबी दर्ज करें", "Issue type": "समस्या का प्रकार", "Priority": "प्राथमिकता", "Describe the issue": "समस्या का विवरण", "Calculators": "कैलकुलेटर", "Emergency reminder": "आपातकालीन सूचना", "Electrical safety": "बिजली सुरक्षा", "Helplines (India)": "हेल्पलाइन (भारत)", "If someone gets an electric shock": "किसी को करंट लगे तो", "Electrical fire": "बिजली से आग", "Units / month": "यूनिट / माह", "Estimated bill": "अनुमानित बिल", "Mark checked today": "आज जांच पूरी", "Do this check once a month.": "यह जांच महीने में एक बार करें।", "Dark appearance": "डार्क मोड", "Update status": "स्थिति बदलें", "Copy reference": "रेफरेंस कॉपी", "Delete": "हटाएं", "← Back": "← वापस"};let lang=localStorage.getItem('voltsathi_lang')||'en';
+function applyLang(){const w=document.createTreeWalker(document.querySelector('.app'),NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const t=n.nodeValue.trim();if(!t)continue;if(n._o===undefined){if(!HI[t])continue;n._o=n.nodeValue;n._k=t}n.nodeValue=lang==='hi'?n._o.replace(n._k,HI[n._k]):n._o}document.documentElement.lang=lang;document.getElementById('langBtn').textContent=lang==='hi'?'English':'हिंदी'}
+function toggleLang(){lang=lang==='hi'?'en':'hi';try{localStorage.setItem('voltsathi_lang',lang)}catch(e){}applyLang()}
+const _sp=showPage;showPage=function(n){_sp(n);if(n==='check')chkLoad();if(n==='settings')acctUI();if(n==='reports')syncReports();if(n==='admin')loadAdmin();setTimeout(applyLang,30)};
+function cycleStatus(id){const o=['Saved locally','Sent to utility','Resolved'],a=getReports(),r=a.find(x=>x.id===id);if(!r)return;r.status=o[(o.indexOf(r.status||o[0])+1)%3];saveReports(a);renderReports();toast('Status: '+r.status)}
+function loadCalc(){const w=parseFloat(document.getElementById('lw').value)||0,a=w/230;document.getElementById('lA').textContent=a.toFixed(1)+' A';
+ let t='Enter a load to get a general guide.';if(w>0){t=a<=6?'General guide: 1.5 mm² copper wire with a 6 A MCB (lights, fans).':a<=16?'General guide: 2.5 mm² copper wire with a 16 A MCB (sockets).':a<=25?'General guide: 4 mm² copper wire with a 25 A MCB (AC, geyser).':a<=32?'General guide: 6 mm² copper wire with a 32 A MCB.':'High load. Needs a professional electrician and a dedicated circuit.'}
+ document.getElementById('lTip').textContent=t+(w>0?' Always confirm with a licensed electrician.':'')}
+function solCalc(){const k=parseFloat(document.getElementById('skw').value)||0,r=parseFloat(document.getElementById('rate').value)||0,u=k*4*30;document.getElementById('sU').textContent=Math.round(u);document.getElementById('sC').textContent='₹'+Math.round(u*r)}
+function chkLoad(){let d={};try{d=JSON.parse(localStorage.getItem('voltsathi_chk')||'{}')}catch(e){}const c=document.querySelectorAll('.ck');c.forEach((x,i)=>{x.checked=!!(d.v&&d.v[i]);x.onchange=chkSave});
+ const e=document.getElementById('chkInfo');if(d.last){const days=Math.floor((Date.now()-new Date(d.last))/864e5);e.textContent=days>=30?'⏰ Last checked '+days+' days ago. A check is due now.':'Last checked '+days+' day(s) ago. Next check due in '+(30-days)+' days.'}else e.textContent='Not checked yet. Do this check once a month.'}
+function chkSave(){let d={};try{d=JSON.parse(localStorage.getItem('voltsathi_chk')||'{}')}catch(e){}d.v=[...document.querySelectorAll('.ck')].map(x=>x.checked);localStorage.setItem('voltsathi_chk',JSON.stringify(d))}
+function chkDone(){chkSave();let d=JSON.parse(localStorage.getItem('voltsathi_chk')||'{}');d.last=new Date().toISOString();localStorage.setItem('voltsathi_chk',JSON.stringify(d));chkLoad();toast('Checklist saved')}
+let dip=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e});
+function installApp(){if(dip){dip.prompt();dip=null}else toast('Browser menu → "Add to Home screen" / "Install app"')}
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+let tok=localStorage.getItem('vs_tok'),me=null;
+async function api(p,o={}){const h={'Content-Type':'application/json'};if(tok)h.Authorization='Bearer '+tok;const r=await fetch('/api'+p,{...o,headers:h});if(!r.ok){let m='Request failed';try{const j=await r.json();m=typeof j.detail==='string'?j.detail:'Please check your input (password needs 8+ characters)'}catch(e){}const e=new Error(m);e.status=r.status;throw e}return r.json()}
+const $=id=>document.getElementById(id);
+async function acctUI(){let on=false;try{const h=await api('/health');on=!h.features||h.features.includes('auth')}catch(e){}
+ if(on&&tok&&!me){try{me=await api('/auth/me')}catch(e){if(e.status===401){tok=null;localStorage.removeItem('vs_tok')}}}
+ $('acctForm').style.display=on&&!me?'block':'none';$('acctIn').style.display=me?'block':'none';
+ if(me){$('acctWho').textContent=me.name+' · '+me.email+' · '+me.role;$('adminBtn').style.display=me.role!=='USER'?'inline-block':'none'}
+ $('acctMsg').textContent=!on?'Login is not available yet. The app works with reports saved on this device.':me?'Reports sync to the server and show real status updates.':'Login to sync reports and get real status updates.'}
+async function doAuth(kind){const b={email:$('aEmail').value.trim(),password:$('aPass').value};if(kind==='register')b.name=$('aName').value.trim()||'User';
+ try{const r=await api('/auth/'+kind,{method:'POST',body:JSON.stringify(b)});const old=localStorage.getItem('vs_email');if(old&&old!==r.user.email)saveReports([]);tok=r.token;me=r.user;localStorage.setItem('vs_tok',tok);localStorage.setItem('vs_email',me.email);$('aPass').value='';toast('Welcome '+me.name);acctUI();syncReports()}catch(e){toast(e.message)}}
+function logout(){tok=null;me=null;localStorage.removeItem('vs_tok');acctUI();toast('Logged out')}
+async function pushReport(r){try{await api('/reports',{method:'POST',body:JSON.stringify({reference:r.id,issue:r.issue,priority:r.priority||'Normal',location:r.location,details:r.details,contact:r.contact||'',gps:r.gps||''})});const a=getReports(),x=a.find(y=>y.id===r.id);if(x){x.synced=true;x.status='Submitted';saveReports(a)}return true}catch(e){return false}}
+async function syncReports(){if(!tok)return;try{let a=getReports();for(const r of a.filter(x=>!x.synced))await pushReport(r);a=getReports();const s=await api('/reports/mine');s.forEach(x=>{const l=a.find(y=>y.id===x.reference);if(l){l.status=x.status;l.synced=true}else a.push({id:x.reference,issue:x.issue,priority:x.priority,location:x.location,details:x.details,contact:x.contact,gps:x.gps,date:new Date(x.created_at).toLocaleString(),createdAt:x.created_at,status:x.status,synced:true})});a.sort((p,q)=>(q.createdAt||'').localeCompare(p.createdAt||''));saveReports(a);renderReports()}catch(e){if(e.status===401)logout()}}
+$('reportForm').addEventListener('submit',()=>{const r=getReports()[0];if(r&&tok)pushReport(r).then(ok=>{renderReports();toast(ok?'Report sent to server':'Saved locally. Will sync later')})});
+async function loadAdmin(){const box=$('adminList');box.innerHTML='<p class="muted">Loading…</p>';try{const all=await api('/reports'),S=['Submitted','Assigned','In progress','Resolved'];
+ box.innerHTML=all.length?all.map(r=>`<div class="card report-item"><h3>${escapeHtml(r.issue)}</h3><p>${escapeHtml(r.location)}<br>By ${escapeHtml(r.user_name)} · ${escapeHtml(r.reference)}${r.contact?'<br>Contact: '+escapeHtml(r.contact):''}${r.gps&&r.gps.startsWith('https://')?'<br><a href="'+escapeHtml(r.gps)+'" target="_blank" rel="noopener">Open map</a>':''}</p><p style="margin-top:6px">${escapeHtml(r.details)}</p><span class="priority ${r.priority==='High'?'high':r.priority==='Medium'?'medium':''}">${escapeHtml(r.priority)} priority</span><div class="field"><select onchange="setStatus('${escapeHtml(r.reference)}',this.value)">${S.map(x=>'<option'+(x===r.status?' selected':'')+'>'+x+'</option>').join('')}</select></div></div>`).join(''):'<div class="card empty"><h3>No reports yet</h3></div>'}catch(e){box.innerHTML='<div class="card"><p class="muted">'+escapeHtml(e.message)+'</p></div>'}}
+async function setStatus(ref,st){try{await api('/reports/'+ref+'/status',{method:'PATCH',body:JSON.stringify({status:st})});toast('Status updated')}catch(e){toast(e.message)}}
+acctUI();
+/* ===== Phone back button: go back inside the app, double-back to exit ===== */
+(function(){
+ const base=showPage;let cur='home',lastBack=0,internal=false;
+ showPage=function(n){base(n);if(!internal&&n!==cur)history.pushState({vs:n},'');cur=n};
+ history.replaceState({vs:'root'},'');history.pushState({vs:'home'},'');
+ window.addEventListener('popstate',e=>{
+  const s=e.state&&e.state.vs;
+  if(s&&s!=='root'){internal=true;showPage(s);internal=false;return}
+  if(Date.now()-lastBack<2000){history.back();return}
+  lastBack=Date.now();toast('Press back again to exit');history.pushState({vs:'home'},'');
+  internal=true;showPage('home');internal=false;
+ });
+})();
+
+/* ===== Forgot password (needs /api/auth/forgot and /api/auth/reset on the server) ===== */
+function forgotToggle(on){$('forgotBox').style.display=on?'block':'none';if(on)$('fEmail').value=$('aEmail').value.trim();else $('forgotStep2').style.display='none'}
+async function forgotSend(){const email=$('fEmail').value.trim();if(!email){toast('Enter your email');return}
+ try{await api('/auth/forgot',{method:'POST',body:JSON.stringify({email})});$('forgotStep2').style.display='block';toast('If this email is registered, a reset code has been sent')}
+ catch(e){toast(e.status===404?'Password reset is not set up on the server yet':e.message)}}
+async function forgotReset(){const email=$('fEmail').value.trim(),code=$('fCode').value.trim(),password=$('fPass').value;
+ if(!code||password.length<8){toast('Enter the code and a new password (8+ characters)');return}
+ try{await api('/auth/reset',{method:'POST',body:JSON.stringify({email,code,password})});toast('Password changed. Please login');$('aEmail').value=email;$('aPass').value='';$('fCode').value='';$('fPass').value='';forgotToggle(false)}
+ catch(e){toast(e.message)}}
+
+/* ===== Google sign-in (needs /api/auth/google on the server) ===== */
+const GOOGLE_CLIENT_ID=''; // paste your Google OAuth Web Client ID here, e.g. 1234-abcd.apps.googleusercontent.com
+async function googleCb(resp){
+ try{const r=await api('/auth/google',{method:'POST',body:JSON.stringify({credential:resp.credential})});
+  const old=localStorage.getItem('vs_email');if(old&&old!==r.user.email)saveReports([]);
+  tok=r.token;me=r.user;localStorage.setItem('vs_tok',tok);localStorage.setItem('vs_email',me.email);
+  toast('Welcome '+me.name);acctUI();syncReports()}catch(e){toast(e.message)}}
+function googleInit(){
+ if(!GOOGLE_CLIENT_ID)return;
+ const draw=()=>{google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:googleCb});google.accounts.id.renderButton($('gBtn'),{theme:'outline',size:'large',text:'signin_with',width:260});$('gWrap').style.display='block'};
+ if(window.google&&google.accounts){draw();return}
+ const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=draw;document.head.appendChild(s)}
+googleInit();
+document.getElementById('rate').addEventListener('input',solCalc);loadCalc();solCalc();applyLang();
+
+updateDashboard(); updateSettings();
+</script>
+</body>
+</html>
