@@ -368,7 +368,7 @@ if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.
 let tok=localStorage.getItem('vs_tok'),me=null;
 async function api(p,o={}){const h={'Content-Type':'application/json'};if(tok)h.Authorization='Bearer '+tok;const r=await fetch('/api'+p,{...o,headers:h});if(!r.ok){let m='Request failed';try{const j=await r.json();m=typeof j.detail==='string'?j.detail:'Please check your input (password needs 8+ characters)'}catch(e){}const e=new Error(m);e.status=r.status;throw e}return r.json()}
 const $=id=>document.getElementById(id);
-async function acctUI(){let on=false;try{const h=await api('/health');on=!h.features||h.features.includes('auth')}catch(e){}
+async function acctUI(){let on=false;try{const h=await api('/health');on=!h.features||h.features.includes('auth');if(h.google_client_id&&!GOOGLE_CLIENT_ID){GOOGLE_CLIENT_ID=h.google_client_id;googleInit()}}catch(e){}
  if(on&&tok&&!me){try{me=await api('/auth/me')}catch(e){if(e.status===401){tok=null;localStorage.removeItem('vs_tok')}}}
  $('acctForm').style.display=on&&!me?'block':'none';$('acctIn').style.display=me?'block':'none';
  if(me){$('acctWho').textContent=me.name+' · '+me.email+' · '+me.role;$('adminBtn').style.display=me.role!=='USER'?'inline-block':'none'}
@@ -408,7 +408,7 @@ async function forgotReset(){const email=$('fEmail').value.trim(),code=$('fCode'
  catch(e){toast(e.message)}}
 
 /* ===== Google sign-in (needs /api/auth/google on the server) ===== */
-const GOOGLE_CLIENT_ID=''; // paste your Google OAuth Web Client ID here, e.g. 1234-abcd.apps.googleusercontent.com
+let GOOGLE_CLIENT_ID=''; // paste your Google OAuth Web Client ID here, e.g. 1234-abcd.apps.googleusercontent.com
 async function googleCb(resp){
  try{const r=await api('/auth/google',{method:'POST',body:JSON.stringify({credential:resp.credential})});
   const old=localStorage.getItem('vs_email');if(old&&old!==r.user.email)saveReports([]);
