@@ -54,6 +54,19 @@ body.dark .warn{background:#3a1d1d;color:#ffb4a8}
 .res{font-size:22px;font-weight:800;color:var(--brand)}
 .chk{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;line-height:1.45}.chk input{width:20px;height:20px;accent-color:var(--brand);flex:none}.lang{background:#ffffff25;color:#fff;border:0;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:700;margin-right:6px}
 </style>
+<style>
+.chat-log{height:min(56vh,440px)}
+.chat-tools{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.chat-tools button{border:1px solid var(--line);background:transparent;color:var(--brand);border-radius:14px;padding:5px 10px;font-size:11px;font-weight:700}
+.bubble.bot{white-space:normal}.bubble p{margin:0 0 8px}.bubble p:last-child{margin-bottom:0}
+.bubble ul,.bubble ol{margin:4px 0 8px;padding-left:20px}.bubble li{margin:2px 0}.bubble h3{margin:8px 0 4px;font-size:14px}
+.bubble pre{background:#0f1f1c;color:#e6fffa;border-radius:10px;padding:10px;overflow-x:auto;font-size:12px;margin:6px 0;white-space:pre}
+.bubble code{background:#e3efec;padding:1px 5px;border-radius:5px;font-size:12px}.bubble pre code{background:none;padding:0}
+.acts{display:flex;gap:6px;margin-top:8px}.acts button{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:14px;padding:4px 9px;font-size:11px}
+.typing:empty::after,.typing::after{content:'\258D';margin-left:2px;animation:vsblink 1s infinite}
+@keyframes vsblink{50%{opacity:.1}}
+body.dark .bubble code{background:#223432}body.dark .acts button,body.dark .chat-tools button{background:#182321}
+</style>
 </head>
 <body>
 <div class="app">
@@ -121,9 +134,10 @@ body.dark .warn{background:#3a1d1d;color:#ffb4a8}
   <div class="section-head"><h2>VoltAI assistant</h2><button class="btn outline" onclick="showPage('home')">← Back</button></div>
   <div class="ai-head"><div class="ai-avatar">✨</div><div><h2>Ask VoltAI</h2><p>Electrical help in simple language</p></div></div>
   <div class="chat">
-    <div class="chat-log" id="chatLog"><div class="bubble bot">Hi! I'm VoltAI. You can ask me about electrical safety, basic concepts, or how to use VoltSathi. What would you like help with?</div></div>
-    <div class="suggestions"><button onclick="suggest('How do I report a fault?')">Report a fault</button><button onclick="suggest('What should I do about an exposed wire?')">Exposed wire</button><button onclick="suggest('Explain earthing simply')">Explain earthing</button></div>
-    <form class="chat-compose" id="chatForm"><input id="chatInput" placeholder="Ask an electrical question..." autocomplete="off" maxlength="500" required><button aria-label="Send message" type="submit">➤</button></form>
+    <div class="chat-tools"><span>VoltAI</span><button type="button" onclick="newChat()">+ New chat</button></div>
+    <div class="chat-log" id="chatLog"></div>
+    <div class="suggestions"><button onclick="suggest('How do I report a fault?')">Report a fault</button><button onclick="suggest('What should I do about an exposed wire?')">Exposed wire</button><button onclick="suggest('Explain earthing simply')">Explain earthing</button><button onclick="suggest('Inverter aur UPS mein kya fark hai?')">Inverter vs UPS</button><button onclick="suggest('Explain Ohm\'s law with an example')">Ohm's law</button></div>
+    <form class="chat-compose" id="chatForm"><input id="chatInput" placeholder="Ask anything..." autocomplete="off" maxlength="2000"><button id="sendBtn" aria-label="Send message" type="submit">➤</button></form>
   </div>
   <p class="notice" id="aiNote">Demo mode: this assistant uses built-in responses, not a live AI model. For ChatGPT-like answers, a secure backend and AI API connection must be configured. Do not put private API keys in this HTML file.</p>
 </section>
@@ -321,17 +335,73 @@ function aiReply(q){
  for(const [re,a] of answers)if(re.test(q))return a;
  return 'I can help with general electrical concepts, basic safety guidance, and using VoltSathi. I do not have live AI connected in this demo, so I may not understand every question. For dangerous wiring, smoke, or sparking, keep away and contact a qualified electrician or the electricity utility.';
 }
-function addBubble(text,who){const log=document.getElementById('chatLog'),b=document.createElement('div');b.className='bubble '+who;b.textContent=text;log.appendChild(b);log.scrollTop=log.scrollHeight;return b}
-let aiHist=[];
-async function sendQuestion(q){q=String(q||'').trim();if(!q)return;addBubble(q,'user');document.getElementById('chatInput').value='';
- const wait=addBubble('…','bot');let ans=null;
- try{const r=await api('/ai/chat',{method:'POST',body:JSON.stringify({message:q,history:aiHist.slice(-8)})});ans=r&&r.reply;
-  if(ans){const n=document.getElementById('aiNote');if(n)n.textContent='Live AI is connected. It can make mistakes. For sparking, smoke or exposed wires keep away and call a qualified electrician.'}}catch(e){ans=null}
- if(!ans)ans=aiReply(q);
- wait.textContent=ans;aiHist.push({role:'user',content:q},{role:'assistant',content:ans});
- const log=document.getElementById('chatLog');log.scrollTop=log.scrollHeight}
-document.getElementById('chatForm').addEventListener('submit',e=>{e.preventDefault();sendQuestion(document.getElementById('chatInput').value)});
+/* ===== VoltAI chat: live streaming, markdown, saved history ===== */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function md(src){
+ const blocks=[];const keep=h=>{blocks.push(h);return '\u0000'+(blocks.length-1)+'\u0000'};
+ let t=esc(src).replace(/```[\w-]*\n?([\s\S]*?)```/g,(m,c)=>keep('<pre><code>'+c.replace(/\n$/,'')+'</code></pre>'));
+ t=t.replace(/```[\w-]*\n?([\s\S]*)$/,(m,c)=>keep('<pre><code>'+c+'</code></pre>'));
+ const inl=s=>s.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
+ let out='',list=null,para=[];
+ const flushP=()=>{if(para.length){out+='<p>'+inl(para.join('<br>'))+'</p>';para=[]}};
+ const closeL=()=>{if(list){out+='</'+list+'>';list=null}};
+ for(const ln of t.split('\n')){
+  let m;
+  if(/^\u0000\d+\u0000$/.test(ln.trim())){flushP();closeL();out+=ln.trim();continue}
+  if(m=ln.match(/^\s*[-*•]\s+(.*)/)){flushP();if(list!=='ul'){closeL();out+='<ul>';list='ul'}out+='<li>'+inl(m[1])+'</li>';continue}
+  if(m=ln.match(/^\s*\d+[.)]\s+(.*)/)){flushP();if(list!=='ol'){closeL();out+='<ol>';list='ol'}out+='<li>'+inl(m[1])+'</li>';continue}
+  if(m=ln.match(/^#{1,4}\s+(.*)/)){flushP();closeL();out+='<h3>'+inl(m[1])+'</h3>';continue}
+  if(!ln.trim()){flushP();closeL();continue}
+  closeL();para.push(ln);
+ }
+ flushP();closeL();
+ return out.replace(/\u0000(\d+)\u0000/g,(m,i)=>blocks[+i]);
+}
+let aiHist=[],aiBusy=false,aiCtl=null;
+const AI_STORE='vs_chat_v1',AI_INTRO="Hi! I'm VoltAI. Ask me anything: electrical safety, appliances, bills, studies or general questions.";
+function saveChat(){try{localStorage.setItem(AI_STORE,JSON.stringify(aiHist.slice(-40)))}catch(e){}}
+function loadChat(){try{const a=JSON.parse(localStorage.getItem(AI_STORE)||'[]');if(Array.isArray(a))return a.filter(m=>m&&(m.role==='user'||m.role==='assistant')&&typeof m.content==='string').slice(-40)}catch(e){}return[]}
+function addBubble(text,who){const log=document.getElementById('chatLog'),b=document.createElement('div');b.className='bubble '+who;b.dataset.raw=text;if(who==='bot')b.innerHTML=md(text);else b.textContent=text;log.appendChild(b);log.scrollTop=log.scrollHeight;return b}
+function addActs(b){document.querySelectorAll('#chatLog .acts').forEach(x=>x.remove());const d=document.createElement('div');d.className='acts';d.innerHTML='<button data-a="copy">Copy</button><button data-a="regen">Regenerate</button>';b.appendChild(d)}
+function renderChat(){const log=document.getElementById('chatLog');log.innerHTML='';addBubble(AI_INTRO,'bot');let last=null;aiHist.forEach(m=>{last=addBubble(m.content,m.role==='user'?'user':'bot')});if(last&&aiHist[aiHist.length-1].role==='assistant')addActs(last)}
+function setSendBtn(busy){const b=document.getElementById('sendBtn');b.textContent=busy?'■':'➤';b.setAttribute('aria-label',busy?'Stop':'Send message')}
+async function streamAI(q,hist,onTok,signal){
+ const r=await fetch('/api/ai/stream',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:hist}),signal});
+ if(!r.ok||!r.body)throw new Error('stream failed');
+ const rd=r.body.getReader(),dec=new TextDecoder();let buf='',acc='';
+ for(;;){const {done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});
+  let i;while((i=buf.indexOf('\n\n'))>=0){const ev=buf.slice(0,i);buf=buf.slice(i+2);
+   if(!ev.startsWith('data:'))continue;let j;try{j=JSON.parse(ev.slice(5))}catch(e){continue}
+   if(j.error){if(!acc)throw new Error(j.error);continue}
+   if(j.t){acc+=j.t;onTok(acc)}}}
+ if(!acc)throw new Error('empty');return acc}
+async function answer(q){
+ aiBusy=true;setSendBtn(true);document.querySelectorAll('#chatLog .acts').forEach(x=>x.remove());
+ const log=document.getElementById('chatLog'),b=addBubble('','bot');b.classList.add('typing');
+ const hist=aiHist.slice(0,-1).slice(-14);let text='',live=true;aiCtl=new AbortController();
+ try{text=await streamAI(q,hist,t=>{b.dataset.raw=t;b.innerHTML=md(t);log.scrollTop=log.scrollHeight},aiCtl.signal)}
+ catch(e){
+  if(e.name==='AbortError'){text=b.dataset.raw||''}
+  else{
+   try{const r=await api('/ai/chat',{method:'POST',body:JSON.stringify({message:q,history:hist})});text=(r&&r.reply)||''}catch(e2){text=''}
+   if(!text){text=aiReply(q);live=false}
+  }
+ }
+ if(!text)text='(stopped)';
+ b.classList.remove('typing');b.dataset.raw=text;b.innerHTML=md(text);
+ aiHist.push({role:'assistant',content:text});saveChat();addActs(b);log.scrollTop=log.scrollHeight;
+ aiBusy=false;aiCtl=null;setSendBtn(false);
+ const n=document.getElementById('aiNote');if(n&&live)n.textContent=AI_LIVE_NOTE}
+const AI_LIVE_NOTE='VoltAI uses a live AI model and can make mistakes. For sparking, smoke or exposed wires keep away and call a qualified electrician.';
+function sendQuestion(q){q=String(q||'').trim();if(!q||aiBusy)return;document.getElementById('chatInput').value='';addBubble(q,'user');aiHist.push({role:'user',content:q});saveChat();return answer(q)}
+function regen(){if(aiBusy)return;if(aiHist.length&&aiHist[aiHist.length-1].role==='assistant')aiHist.pop();const u=aiHist[aiHist.length-1];if(!u||u.role!=='user')return;const bots=document.querySelectorAll('#chatLog .bubble.bot');bots[bots.length-1].remove();saveChat();answer(u.content)}
+function newChat(){if(aiBusy&&aiCtl)aiCtl.abort();aiHist=[];saveChat();renderChat();aiBusy=false;setSendBtn(false)}
+document.getElementById('chatForm').addEventListener('submit',e=>{e.preventDefault();if(aiBusy){if(aiCtl)aiCtl.abort();return}sendQuestion(document.getElementById('chatInput').value)});
+document.getElementById('chatLog').addEventListener('click',e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;if(a==='regen')return regen();const b=e.target.closest('.bubble');const txt=(b&&b.dataset.raw)||'';if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast('Copied'),()=>toast('Could not copy'))});
 function suggest(q){sendQuestion(q)}
+aiHist=loadChat();renderChat();
+api('/health').then(h=>{if(h&&h.features&&h.features.includes('ai')){const n=document.getElementById('aiNote');if(n)n.textContent=AI_LIVE_NOTE}}).catch(()=>{});
+
 const darkToggle=document.getElementById('darkToggle');
 function setDarkMode(on){document.body.classList.toggle('dark',on);if(darkToggle)darkToggle.checked=on;try{localStorage.setItem('voltsathi_dark',on?'1':'0')}catch(e){}}
 try{setDarkMode(localStorage.getItem('voltsathi_dark')==='1')}catch(e){setDarkMode(false)}
